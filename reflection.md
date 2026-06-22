@@ -32,7 +32,7 @@ I used the AI coding assistant built into VS Code as my main teammate for the re
 
 **A correct suggestion:** I gave the AI a multi-step prompt asking it to fix the `attempts` initialization (from 1 to 0), remove the block in `app.py` that converted the secret to a string on even attempts, refactor all four functions (`get_range_for_difficulty`, `parse_guess`, `check_guess`, `update_score`) from `app.py` into `logic_utils.py`, fix the swapped hint messages inside `check_guess`, and update the import in `app.py`. The AI applied all of these correctly. I verified the result two ways: I read the diff for both files to confirm the `check_guess` messages were now correct ("Too High" → "Go LOWER!", "Too Low" → "Go HIGHER!") and that the function definitions were removed from `app.py` and replaced by a single import line, and then I ran the game live and confirmed the hints pointed in the right direction in both directions.
 
-**An incorrect/misleading gap:** When the AI moved `update_score` into `logic_utils.py`, it copied the function over as expected but left the flawed scoring logic untouched — specifically the branch where a "Too High" outcome on an even-numbered attempt _adds_ 5 points instead of subtracting, which is why the score behaved inconsistently. The AI did not flag this as a bug or offer to fix it, even though it was clearly part of the broken scoring behavior I documented in Phase 1. I caught it by reviewing the diff against my own bug notes rather than trusting that "refactor this function" also meant "fix everything wrong with it." This was a useful reminder that the AI does exactly what you ask and no more — it won't volunteer judgment about correctness unless you direct it to.
+**An incorrect/misleading gap:** When the AI moved `update_score` into `logic_utils.py`, it copied the function over faithfully but left the flawed scoring logic untouched — specifically the branch where a "Too High" outcome on an even-numbered attempt _adds_ 5 points instead of subtracting, which is why the score behaved inconsistently. The AI did not flag this as a bug or offer to fix it, even though it was clearly part of the broken scoring behavior I documented in Phase 1. I caught it by reviewing the diff against my own bug notes rather than trusting that "refactor this function" also meant "fix everything wrong with it." This was a useful reminder that the AI does exactly what you ask and no more — it won't volunteer judgment about correctness unless you direct it to.
 
 ---
 
@@ -44,13 +44,14 @@ I decided a bug was really fixed only after it passed two independent checks: a 
 
 ## 4. What did you learn about Streamlit and state?
 
-- How would you explain Streamlit "reruns" and session state to a friend who has never used Streamlit?
+I learned that Streamlit re-runs the entire `app.py` script from top to bottom every single time the user interacts with the page — clicking a button, typing in a box, or toggling a checkbox all trigger a full rerun. The way I'd explain it to a friend: imagine a whiteboard that gets completely wiped and redrawn from scratch every time you touch it. That's a problem for a game, because if the line that picks the secret number runs again on every interaction, you'd get a brand-new secret on every click — which is exactly the "secret has commitment issues" bug. The solution is **session state**, which works like a small locked drawer next to the whiteboard that does _not_ get wiped on rerun: anything stored in `st.session_state` survives between interactions. That's why the code guards the secret with `if "secret" not in st.session_state:` — it only generates a new number when the drawer is empty, and otherwise leaves the existing value alone. The same pattern keeps `attempts`, `score`, and `history` stable across reruns so the game can actually remember what happened.
 
 ---
 
 ## 5. Looking ahead: your developer habits
 
-- What is one habit or strategy from this project that you want to reuse in future labs or projects?
-  - This could be a testing habit, a prompting strategy, or a way you used Git.
-- What is one thing you would do differently next time you work with AI on a coding task?
-- In one or two sentences, describe how this project changed the way you think about AI generated code.
+**One habit/strategy to reuse:** Verifying every fix two ways — a manual play-through _and_ an automated `pytest` test — before declaring it done. Watching the game behave correctly is reassuring, but the passing test is what proves it and protects against the bug silently coming back later. I want to carry this "prove it, don't assume it" habit into every future project, along with writing the `# FIXME` "crime scene" comment before fixing, which kept me focused on one specific location at a time.
+
+**One thing I'd do differently with AI:** I'd be more explicit when asking the AI to refactor code that I already know contains bugs. This time, asking it to "move this function" produced a faithful copy that carried the existing scoring bug along with it. Next time I'd say "move this function _and_ fix any incorrect logic you find in it," or better, separate the two requests so I review the move and the fix independently.
+
+**How this changed my thinking about AI-generated code:** I now treat AI-generated code as a fast first draft from a confident but unaccountable teammate — it produces working-looking output quickly, but it doesn't know which parts are wrong unless I tell it, so the responsibility for judging correctness stays with me. The footer of the broken game said it all: "Built by an AI that claims this code is production-ready." My job is to be the reviewer who decides whether that claim is actually true.
