@@ -65,3 +65,9 @@ $ python -m pytest -q
 ## 🚀 Stretch Features
 
 - [ ] [If you choose to complete Challenge 4, describe the Enhanced UI changes here — a screenshot is optional]
+
+
+
+Glitchy Guesser UI:
+
+<img width="1055" height="1596" alt="image" src="https://github.com/user-attachments/assets/4bb20cac-aa69-49c8-b0df-9f255f544d74" />
